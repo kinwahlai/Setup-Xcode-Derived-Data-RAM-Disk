@@ -52,6 +52,8 @@ filename: com.ikiapps.setupXcodeDerivedDataRamDisk.plist
 <!DOCTYPE plist PUBLIC -//Apple//DTD PLIST 1.0//EN http://www.apple.com/DTDs/PropertyList-1.0.dtd>
 <plist version=1.0>
 <dict>
+<key>Disabled</key>
+<false/>
 <key>Label</key>
 <string>com.ikiapps.setupXcodeDerivedDataRamDisk.plist</string>
 <key>ProgramArguments</key>
@@ -64,7 +66,7 @@ filename: com.ikiapps.setupXcodeDerivedDataRamDisk.plist
 <key>StartInterval</key>
 <integer>600</integer>
 <key>KeepAlive</key>
-<true/>
+<false/>
 <key>StandardErrorPath</key>
 <string>/tmp/com.ikiApps.setupXcodeDerivedDataRamDisk.plist.stderr</string>
 <key>StandardOutPath</key>
