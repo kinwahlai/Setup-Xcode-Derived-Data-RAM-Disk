@@ -61,8 +61,14 @@ filename: com.ikiapps.setupXcodeDerivedDataRamDisk.plist
 </array>
 <key>RunAtLoad</key>
 <true/>
-<key>LaunchOnlyOnce</key>
+<key>StartInterval</key>
+<integer>600</integer>
+<key>KeepAlive</key>
 <true/>
+<key>StandardErrorPath</key>
+<string>/tmp/com.ikiApps.setupXcodeDerivedDataRamDisk.plist.stderr</string>
+<key>StandardOutPath</key>
+<string>/tmp/com.ikiApps.setupXcodeDerivedDataRamDisk.plist.stdout</string>
 </dict>
 </plist>
 -------------------------------------------------------------------
@@ -77,6 +83,7 @@ launchctl load com.ikiapps.setupXcodeDerivedDataRamDisk.plist
 let RAMDISK_GB = 4 // Set the number of gigabytes for the RAM disk here!
 let home = NSHomeDirectory()
 let derivedDataPath = "\(home)/Library/Developer/Xcode/DerivedData"
+let shadowDerivedDataPath = "\(home)/Library/Developer/Xcode/DerivedData_shadow"
 
 /// - returns: Bool true if the ram disk already exists.
 func ramDiskExists() -> Bool
@@ -185,6 +192,26 @@ func runTask(launchPath: String,
     return String(data: data, encoding: String.Encoding.utf8)!
 }
 
+func shadowFolderExists() -> Bool {
+    var isDir : ObjCBool = false
+    if (FileManager.default.fileExists(atPath: shadowDerivedDataPath, isDirectory: &isDir) && isDir.boolValue) {
+        print("DerivedData shadow folder exists.")
+        return true
+    } else {
+        print("DerivedData shadow folder not exists.")
+        do {
+            print("Trying to create DerivedData shadow folder.")
+            try FileManager.default.createDirectory(atPath: shadowDerivedDataPath, withIntermediateDirectories: false)
+            return true
+        } catch let error as NSError {
+            print("error: \(error.localizedDescription)")
+            assert (false)
+        }
+    }
+    return false
+}
+
+print("============== \(Date().description) ===============\n")
 print("Setting up RAM disk for Xcode.\n")
 
 if !ramDiskExists() {
@@ -192,9 +219,24 @@ if !ramDiskExists() {
 
     if result {
         print("Created RAM disk.")
+        if shadowFolderExists() {
+            print("Copy from DerivedData shadow folder to DerivedData ramdisk.")
+            let output = runTask(launchPath: "cp",
+                                 arguments: ["-rp", "\(shadowDerivedDataPath)/*", "\(derivedDataPath)/"])
+            print(output)
+        }
     } else {
         print("Unable to create RAM disk.")
     }
 } else {
+    // we use start interval of 600 sec so meaning launchd will run this script every 10mins, and we rsync the content to shadow folder
     print("RAM disk for Derived Data already exists.")
+    if shadowFolderExists() {
+        print("Rsync from DerivedData to DerivedData shadow folder.")
+        let output = runTask(launchPath: "/usr/bin/rsync",
+                             arguments: ["-aqr", "--delete", "\(derivedDataPath)/", "\(shadowDerivedDataPath)/"])
+        print(output)
+    }
 }
+
+print("========================================\n")
